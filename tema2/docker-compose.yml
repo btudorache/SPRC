@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  app:
+    depends_on:
+      - mongo-express
+    build: ./
+    restart: always
+    env_file: ./.env
+    ports:
+      - $NODE_LOCAL_PORT:$NODE_DOCKER_PORT
+    environment:
+      - DB_HOST=geography-db
+      - DB_USER=$MONGODB_USER
+      - DB_PASSWORD=$MONGODB_PASSWORD
+      - DB_NAME=$MONGODB_DATABASE
+      - DB_PORT=$MONGODB_DOCKER_PORT
+    networks:
+      - api
+    stdin_open: true
+    tty: true
+
+  mongo:
+    image: mongo
+    restart: always
+    hostname: geography-db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: $MONGO_ROOT_USERNAME
+      MONGO_INITDB_ROOT_PASSWORD: $MONGO_ROOT_PASSWORD
+      MONGO_INITDB_DATABASE: $MONGODB_DATABASE
+    ports:
+      - $MONGODB_LOCAL_PORT:$MONGODB_DOCKER_PORT
+    networks:
+      - api
+      - db-access
+    volumes:
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - db:/data/db
+
+  mongo-express:
+    depends_on:
+     - mongo
+    image: mongo-express
+    restart: always
+    ports:
+      - $MONGO_EXPRESS_LOCAL_PORT:$MONGO_EXPRESS_DOCKER_PORT
+    networks:
+      - db-access
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: $ME_MONGODB_ADMINUSERNAME
+      ME_CONFIG_MONGODB_ADMINPASSWORD: $ME_MONGODB_ADMINPASSWORD
+      ME_CONFIG_MONGODB_URL: mongodb://$MONGO_ROOT_USERNAME:$MONGO_ROOT_PASSWORD@geography-db:27017/
+
+networks:
+  api:
+  db-access:
+
+volumes:
+  db:
