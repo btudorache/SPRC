@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  messagebroker:
+    image: eclipse-mosquitto
+    ports:
+      - 1883:1883
+    networks:
+      - net1
+      - net2
+    volumes:
+    - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  influxdb:
+    image: influxdb:2.6
+    depends_on:
+     - messagebroker
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: my-user
+      DOCKER_INFLUXDB_INIT_PASSWORD: my-password
+      DOCKER_INFLUXDB_INIT_ORG: my-org
+      DOCKER_INFLUXDB_INIT_BUCKET: my-bucket
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: initial-token
+    networks:
+      - net1
+      - net2
+    volumes:
+      - influx-data:/var/lib/influxdb2
+      - ./config.yml:/etc/influxdb2/config.yml
+
+  messageadapter:
+    depends_on:
+      - messagebroker
+      - influxdb
+    image: adapter
+    build: ./
+    restart: always
+    environment:
+      DEBUG_DATA_FLOW: "true"
+    networks:
+      - net2
+    tty: true
+
+
+  grafana:
+    depends_on:
+     - influxdb
+    image: grafana/grafana:9.1.4
+    restart: always
+    ports:
+      - 80:3000
+    networks:
+      - net1
+    environment:
+      GF_SECURITY_ADMIN_USER: asistent
+      GF_SECURITY_ADMIN_PASSWORD: grafanaSPRC2021
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning
+      - ./grafana.ini:/etc/grafana/grafana.ini
+      - ./dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+
+networks:
+  net1:
+  net2:
+
+volumes:
+  influx-data:
+  grafana-data:

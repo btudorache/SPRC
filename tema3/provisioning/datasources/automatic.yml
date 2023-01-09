@@ -1,0 +1,28 @@
+apiVersion: 1
+
+deleteDatasources:
+- name: InfluxDB
+  orgId: 1
+
+datasources:
+- name: InfluxDB
+  type: influxdb
+  orgId: 1
+  name: InfluxDB
+  typeName: InfluxDB
+  access: proxy
+  url: http://influxdb:8086
+  user: ""
+  database: ""
+  basicAuth: false
+  isDefault: true
+  jsonData:
+    httpHeaderName1: 'Authorization'
+    defaultBucket: my-bucket
+    httpMode: POST
+    organization: my-org
+    token: initial-token
+    version: Flux
+  readOnly: false
+  secureJsonData:
+    httpHeaderValue1: 'Bearer initial-token'
